@@ -16,3 +16,5 @@ Weekly NFL line-guessing game. Each player guesses the spread and total for ever
 - The Vegas line is snapshotted every time you lock/update a guess.
 - You can't see the line or other players' numbers until you reveal.
 - Every line change we observe is stored in `line_snapshots` (for line-movement analysis).
+
+_Last deploy trigger: MVP-1 preview_
