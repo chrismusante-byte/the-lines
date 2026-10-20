@@ -5,6 +5,7 @@ import { getBrowserClient } from '../lib/supabase';
 import { SEASON, currentWeek, weekLabel } from '../lib/nfl';
 import GameCard from './GameCard';
 import PasswordModal from './PasswordModal';
+import Season from './Season';
 
 function readPref(key, fallback) {
   try {
@@ -178,6 +179,9 @@ export default function Board({ player }) {
           <button className={mode === 'week' ? 'on' : ''} onClick={() => changeMode('week')}>
             Full week
           </button>
+          <button className={mode === 'season' ? 'on' : ''} onClick={() => changeMode('season')}>
+            Stats
+          </button>
         </div>
         <div className="status">
           <span>Lines {timeAgo(meta?.lines_fetched_at)}</span>
@@ -190,9 +194,11 @@ export default function Board({ player }) {
       {notice && <div className="notice">{notice}</div>}
       {loadErr && <div className="error pad">{loadErr}</div>}
 
-      {!board && !loadErr && <div className="empty">Loading {weekLabel(week)}…</div>}
+      {mode !== 'season' && !board && !loadErr && <div className="empty">Loading {weekLabel(week)}…</div>}
 
-      {board && games.length === 0 && (
+      {mode === 'season' && <Season week={week} />}
+
+      {mode !== 'season' && board && games.length === 0 && (
         <div className="empty">
           No games loaded for {weekLabel(week)} yet.
           <br />
