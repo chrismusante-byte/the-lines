@@ -55,7 +55,7 @@ export async function POST(req) {
   const authz = req.headers.get('authorization');
   if (!authz) return Response.json({ ok: false, error: 'Not signed in' }, { status: 401 });
 
-  const apiKey = process.env.ODDS_API_KEY;
+  const apiKey = (process.env.ODDS_API_KEY || '').trim();
   if (!apiKey) {
     return Response.json({ ok: false, error: 'ODDS_API_KEY is not set on the server yet.' });
   }
@@ -82,7 +82,8 @@ export async function POST(req) {
       const r = await fetch(url, { cache: 'no-store' });
       const remaining = parseInt(r.headers.get('x-requests-remaining') || '', 10);
       if (!r.ok) {
-        out.lines = `error ${r.status}`;
+        const body = await r.text().catch(() => '');
+        out.lines = `error ${r.status}: ${body.slice(0, 200)}`;
       } else {
         const events = await r.json();
         const now = Date.now();
@@ -94,12 +95,15 @@ export async function POST(req) {
           p_rows: rows,
           p_remaining: Number.isNaN(remaining) ? null : remaining,
         });
-        out.lines = error ? `db error: ${error.message}` : `updated ${n}`;
+        out.lines = error ? `error db: ${error.message}` : `updated ${n} of ${events.length} games`;
         out.remaining = Number.isNaN(remaining) ? null : remaining;
       }
     } catch (e) {
-      out.lines = `fetch failed: ${e.message}`;
+      out.lines = `error fetch: ${e.message}`;
     }
+    const ok = !String(out.lines).startsWith('error');
+    console.log('[refresh] lines:', out.lines);
+    await sb.rpc('record_fetch_result', { p_kind: 'odds', p_ok: ok, p_message: out.lines });
   }
 
   // ---- Scores for games that kicked off in the last 3 days ----
@@ -114,7 +118,8 @@ export async function POST(req) {
         const url = `${ODDS_BASE}/scores?daysFrom=3&apiKey=${apiKey}`;
         const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) {
-          out.scores = `error ${r.status}`;
+          const body = await r.text().catch(() => '');
+          out.scores = `error ${r.status}: ${body.slice(0, 200)}`;
         } else {
           const events = await r.json();
           const rows = events
@@ -130,11 +135,17 @@ export async function POST(req) {
               };
             });
           const { data: n, error } = await sb.rpc('ingest_scores', { p_rows: rows });
-          out.scores = error ? `db error: ${error.message}` : `updated ${n}`;
+          out.scores = error ? `error db: ${error.message}` : `updated ${n}`;
         }
       } catch (e) {
-        out.scores = `fetch failed: ${e.message}`;
+        out.scores = `error fetch: ${e.message}`;
       }
+      console.log('[refresh] scores:', out.scores);
+      await sb.rpc('record_fetch_result', {
+        p_kind: 'scores',
+        p_ok: !String(out.scores).startsWith('error'),
+        p_message: out.scores,
+      });
     }
   }
 

@@ -72,10 +72,15 @@ export default function Board({ player }) {
         });
         const j = await r.json().catch(() => ({}));
         if (!j.ok) setNotice(j.error || 'Could not refresh lines.');
-        else if (String(j.lines).startsWith('error') || String(j.lines).includes('failed'))
-          setNotice(`Odds service: ${j.lines}`);
-        else if (force && j.lines === 'skipped') setNotice('Lines were refreshed a few minutes ago.');
-        else setNotice('');
+        else if (String(j.lines).startsWith('error')) setNotice(`Odds service problem — ${j.lines}`);
+        else if (j.lines === 'skipped') {
+          // Throttled: show the last real result if it was a failure.
+          const { data: m } = await sb.rpc('board_meta');
+          const last = m?.odds_result;
+          if (last && last.ok === false) setNotice(`Last lines refresh failed — ${last.message}`);
+          else if (force) setNotice('Lines were refreshed a few minutes ago.');
+          else setNotice('');
+        } else setNotice('');
       } finally {
         setRefreshing(false);
         loadBoard();
