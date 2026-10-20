@@ -26,6 +26,27 @@ function sideAbbr(side, game) {
   return null;
 }
 
+// One color scale for spread and total: how far your number was from Vegas.
+function closeness(off) {
+  if (off === null || off === undefined) return null;
+  const o = Math.abs(off);
+  if (o === 0) return { key: 'nailed', label: 'Nailed it' };
+  if (o <= 1) return { key: 'sharp', label: 'Sharp' };
+  if (o <= 2.5) return { key: 'off', label: 'Off' };
+  return { key: 'way', label: 'Way off' };
+}
+
+function CloseTag({ off, suffix }) {
+  const c = closeness(off);
+  if (!c) return null;
+  return (
+    <span className={`close-tag c-${c.key}`}>
+      {c.label}
+      {c.key !== 'nailed' ? ` · ${suffix}` : ''}
+    </span>
+  );
+}
+
 function GuessForm({ game, mine, onSaved }) {
   const sb = getBrowserClient();
   const initFav =
@@ -193,8 +214,12 @@ function RevealedView({ game }) {
               <div className="who-name">{g.is_me ? 'You' : g.name}</div>
               <div className="who-cols">
                 <div>
-                  <div className="who-num">{fmtSpread(g.home_spread, game.home_team, game.away_team)}</div>
-                  <div className="who-sub">{sOff === null ? '' : sOff === 0 ? 'Nailed Vegas' : `${fmtNum(sOff)} off Vegas`}</div>
+                  <div className={`who-num ${closeness(sOff) ? `c-${closeness(sOff).key}` : ''}`}>
+                    {fmtSpread(g.home_spread, game.home_team, game.away_team)}
+                  </div>
+                  <div className="who-sub">
+                    <CloseTag off={sOff} suffix={`${fmtNum(sOff)} off`} />
+                  </div>
                   <div className="who-sub">
                     {ats === 'none' ? 'No ATS lean' : ats ? `Likes ${sideAbbr(ats, game)} ATS` : ''}
                     {atsRes && <span className={`wl ${atsRes}`}>{atsRes}</span>}
@@ -202,8 +227,10 @@ function RevealedView({ game }) {
                   {spreadErr !== null && <div className="who-sub">{fmtNum(spreadErr)} off final margin</div>}
                 </div>
                 <div>
-                  <div className="who-num">{fmtNum(g.total)}</div>
-                  <div className="who-sub">{tOff === null ? '' : tOff === 0 ? 'Nailed Vegas' : `${fmtSigned(tOff)} vs Vegas`}</div>
+                  <div className={`who-num ${closeness(tOff) ? `c-${closeness(tOff).key}` : ''}`}>{fmtNum(g.total)}</div>
+                  <div className="who-sub">
+                    <CloseTag off={tOff} suffix={tOff === null ? '' : `${fmtSigned(tOff)} vs Vegas`} />
+                  </div>
                   <div className="who-sub">
                     {ou === 'none' ? 'No O/U lean' : ou ? (ou === 'over' ? 'Likes Over' : 'Likes Under') : ''}
                     {ouRes && <span className={`wl ${ouRes}`}>{ouRes}</span>}
