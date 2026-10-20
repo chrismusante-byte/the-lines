@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../../../lib/supabase';
 import { refreshLines, refreshScores } from '../../../lib/odds';
+import { refreshContext } from '../../../lib/context';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Called by the Supabase scheduler (pg_cron) before kickoffs and after games.
 // Body: { "kinds": ["lines", "scores"] }   Header: Authorization: Bearer <CRON_SECRET>
@@ -14,7 +16,6 @@ export async function POST(req) {
   }
 
   const apiKey = (process.env.ODDS_API_KEY || '').trim();
-  if (!apiKey) return Response.json({ ok: false, error: 'ODDS_API_KEY missing' }, { status: 500 });
 
   let kinds = [];
   try {
@@ -35,7 +36,26 @@ export async function POST(req) {
   };
 
   const out = { ok: true };
-  if (kinds.includes('lines')) out.lines = await refreshLines(apiKey, ops, 5);
-  if (kinds.includes('scores')) out.scores = await refreshScores(apiKey, ops, 5);
+  if (apiKey && kinds.includes('lines')) out.lines = await refreshLines(apiKey, ops, 5);
+  if (apiKey && kinds.includes('scores')) out.scores = await refreshScores(apiKey, ops, 5);
+
+  if (kinds.includes('context') || kinds.includes('history')) {
+    const { data: due } = await ops.claim('context', 20);
+    if (due || kinds.includes('history')) {
+      const ctxOps = {
+        upsertResults: (rows) => sb.rpc('cron_upsert_results', { p_secret: secret, p_rows: rows }),
+        setInjuries: (rows) => sb.rpc('cron_set_injuries', { p_secret: secret, p_rows: rows }),
+        setForecasts: (rows) => sb.rpc('cron_set_forecasts', { p_secret: secret, p_rows: rows }),
+        upcomingOutdoor: () => sb.rpc('cron_upcoming_outdoor', { p_secret: secret }),
+      };
+      try {
+        out.context = await refreshContext(ctxOps, { history: kinds.includes('history') });
+      } catch (e) {
+        out.context = `error context: ${e.message}`;
+      }
+      console.log('[cron] context:', out.context);
+      await ops.record('context', !String(out.context).includes('error'), out.context);
+    } else out.context = 'skipped';
+  }
   return Response.json(out);
 }

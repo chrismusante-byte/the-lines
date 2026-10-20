@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getBrowserClient } from '../lib/supabase';
 import { team, isDivisional, isConference } from '../lib/teams';
 import { fmtNum, fmtSpread, fmtSigned, atsLean, ouLean, gameResult } from '../lib/nfl';
+import Scouting from './Scouting';
 
 function kickoff(iso) {
   const d = new Date(iso);
@@ -218,7 +219,7 @@ function RevealedView({ game }) {
   );
 }
 
-export default function GameCard({ game, onChanged, compact }) {
+export default function GameCard({ game, onChanged, compact, ctx }) {
   const sb = getBrowserClient();
   const [skipArmed, setSkipArmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -261,6 +262,8 @@ export default function GameCard({ game, onChanged, compact }) {
         {game.started && !game.completed && <span className="tag live">Kicked off</span>}
         {game.completed && <span className="tag">Final</span>}
       </div>
+
+      <Scouting ctx={ctx} game={game} defaultOpen={!compact && !showReveal} />
 
       {!showReveal && (
         <>

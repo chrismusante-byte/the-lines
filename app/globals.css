@@ -727,3 +727,95 @@ p {
 .wl.none {
   color: var(--muted);
 }
+
+/* ---------- Scouting (MVP-3) ---------- */
+.scout {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.scout summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+  list-style: none;
+}
+.scout summary::-webkit-details-marker {
+  display: none;
+}
+.scout summary::before {
+  content: '▸ ';
+}
+.scout[open] summary::before {
+  content: '▾ ';
+}
+.scout-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scout-team {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.scout-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip.sm {
+  font-size: 16px;
+  padding: 1px 7px;
+  border-left-width: 3px;
+}
+.streak {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--bg2);
+}
+.streak.W {
+  color: var(--green);
+}
+.streak.L {
+  color: var(--red);
+}
+.last3 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.inj {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.inj-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg2);
+  color: var(--muted);
+}
+.inj-status.s-out,
+.inj-status.s-injured {
+  color: var(--red);
+}
+.inj-status.s-doubtful {
+  color: #ff9f5e;
+}
+.inj-status.s-questionable {
+  color: var(--accent);
+}
+.tiny {
+  font-size: 11px;
+}

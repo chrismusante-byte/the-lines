@@ -43,6 +43,7 @@ export default function Board({ player }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [revealAllBusy, setRevealAllBusy] = useState(false);
+  const [ctx, setCtx] = useState(null);
   const pickedStartFor = useRef(null);
 
   useEffect(() => {
@@ -89,6 +90,13 @@ export default function Board({ player }) {
     },
     [sb, loadBoard]
   );
+
+  // Scouting data (ESPN results/injuries + weather). No betting lines in here.
+  useEffect(() => {
+    sb.rpc('get_context_data').then(({ data, error }) => {
+      if (!error && data) setCtx(data);
+    });
+  }, [sb, week]);
 
   // Load on week change; pull fresh lines (server throttles to save API credits).
   useEffect(() => {
@@ -240,7 +248,7 @@ export default function Board({ player }) {
               ›
             </button>
           </div>
-          <GameCard key={games[safeIdx].id} game={games[safeIdx]} onChanged={loadBoard} />
+          <GameCard key={games[safeIdx].id} game={games[safeIdx]} onChanged={loadBoard} ctx={ctx} />
           {safeIdx < games.length - 1 && (games[safeIdx].revealed || games[safeIdx].started) && (
             <button className="btn primary block next-game" onClick={() => setIdx(safeIdx + 1)}>
               Next game ›
@@ -252,7 +260,7 @@ export default function Board({ player }) {
       {board && games.length > 0 && mode === 'week' && (
         <div className="list">
           {games.map((g) => (
-            <GameCard key={g.id} game={g} onChanged={loadBoard} compact />
+            <GameCard key={g.id} game={g} onChanged={loadBoard} compact ctx={ctx} />
           ))}
           <div className="spacer" />
         </div>
