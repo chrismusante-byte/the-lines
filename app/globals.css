@@ -822,9 +822,9 @@ p {
 
 /* ---------- Closeness color scale (spread & total, same cutoffs) ---------- */
 :root {
-  --c-nailed: #f5c542;
+  --c-nailed: #b48cff;
   --c-sharp: #4fd18b;
-  --c-off: #ff9f45;
+  --c-off: #f5c542;
   --c-way: #ff5e57;
 }
 .who-num.c-nailed { color: var(--c-nailed); }
@@ -838,9 +838,9 @@ p {
   border-radius: 999px;
   border: 1px solid currentColor;
 }
-.close-tag.c-nailed { color: var(--c-nailed); background: rgba(245, 197, 66, 0.15); }
+.close-tag.c-nailed { color: var(--c-nailed); background: rgba(180, 140, 255, 0.15); }
 .close-tag.c-sharp { color: var(--c-sharp); background: rgba(79, 209, 139, 0.12); }
-.close-tag.c-off { color: var(--c-off); background: rgba(255, 159, 69, 0.12); }
+.close-tag.c-off { color: var(--c-off); background: rgba(245, 197, 66, 0.12); }
 .close-tag.c-way { color: var(--c-way); background: rgba(255, 94, 87, 0.12); }
 .who-num.c-nailed::after { content: ' ★'; font-size: 0.7em; }
 
