@@ -5,6 +5,8 @@ import { getBrowserClient } from '../lib/supabase';
 import { SEASON, weekLabel, fmtNum, fmtSpread } from '../lib/nfl';
 import { team } from '../lib/teams';
 import { aggregate, rankBy, pct, groupByGame } from '../lib/stats';
+import { buildWeekly } from '../lib/charts';
+import Charts from './Charts';
 
 const f1 = (v) => (v === null || v === undefined ? '—' : v.toFixed(1));
 const pctStr = (v) => (v === null ? '—' : `${Math.round(v * 100)}%`);
@@ -83,14 +85,19 @@ export default function Season({ week }) {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState('');
   const [scope, setScope] = useState('season');
+  const [seasonGames, setSeasonGames] = useState(null);
 
   const load = useCallback(async () => {
-    const { data, error } = await sb.rpc('get_season_rows', { p_season: SEASON });
+    const [{ data, error }, sg] = await Promise.all([
+      sb.rpc('get_season_rows', { p_season: SEASON }),
+      sb.rpc('get_season_games', { p_season: SEASON }),
+    ]);
     if (error) setErr(error.message);
     else {
       setErr('');
       setRows(data || []);
     }
+    if (!sg.error) setSeasonGames(sg.data);
   }, [sb]);
 
   useEffect(() => {
@@ -99,6 +106,7 @@ export default function Season({ week }) {
 
   const filtered = useMemo(() => (rows || []).filter((r) => scope === 'season' || r.week === week), [rows, scope, week]);
   const players = useMemo(() => aggregate(filtered), [filtered]);
+  const weekly = useMemo(() => buildWeekly(seasonGames, rows), [seasonGames, rows]);
 
   if (err) return <div className="error pad">{err}</div>;
   if (!rows) return <div className="empty">Loading stats…</div>;
@@ -122,6 +130,8 @@ export default function Season({ week }) {
           {weekLabel(week)}
         </button>
       </div>
+
+      <Charts weekly={weekly} scope={scope} week={week} />
 
       {filtered.length === 0 ? (
         <div className="empty">

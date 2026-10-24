@@ -50,7 +50,7 @@ function CloseTag({ off, suffix }) {
 function GuessForm({ game, mine, onSaved }) {
   const sb = getBrowserClient();
   const initFav =
-    mine?.home_spread == null ? '' : Number(mine.home_spread) < 0 ? 'home' : Number(mine.home_spread) > 0 ? 'away' : '';
+    mine?.home_spread == null ? '' : Number(mine.home_spread) < 0 ? 'home' : Number(mine.home_spread) > 0 ? 'away' : 'pk';
   const [fav, setFav] = useState(initFav);
   const [pts, setPts] = useState(mine?.home_spread == null || Number(mine.home_spread) === 0 ? '' : String(Math.abs(mine.home_spread)));
   const [tot, setTot] = useState(mine?.total == null ? '' : String(mine.total));
@@ -67,10 +67,13 @@ function GuessForm({ game, mine, onSaved }) {
   async function save(e) {
     e.preventDefault();
     setErr('');
-    if (!fav) return setErr('Pick the favorite.');
-    const n = Number(pts);
-    if (!pts || !isHalfStep(n) || n <= 0 || n > 40) return setErr('Spread: enter a number like 3 or 6.5.');
-    const homeSpread = fav === 'home' ? -n : n;
+    if (!fav) return setErr('Pick the favorite (or PK).');
+    let homeSpread = 0;
+    if (fav !== 'pk') {
+      const n = Number(pts);
+      if (!pts || !isHalfStep(n) || n <= 0 || n > 40) return setErr('Spread: enter a number like 3 or 6.5.');
+      homeSpread = fav === 'home' ? -n : n;
+    }
     const t = Number(tot);
     if (!tot || !isHalfStep(t) || t < 10 || t > 99) return setErr('Total: enter a number like 44.5.');
     setBusy(true);
@@ -89,17 +92,21 @@ function GuessForm({ game, mine, onSaved }) {
         <button type="button" className={fav === 'away' ? 'on' : ''} onClick={() => (setFav('away'), clear())}>
           {away}
         </button>
+        <button type="button" className={fav === 'pk' ? 'on' : ''} onClick={() => (setFav('pk'), clear())}>
+          PK
+        </button>
         <button type="button" className={fav === 'home' ? 'on' : ''} onClick={() => (setFav('home'), clear())}>
           {home}
         </button>
       </div>
       <div className="inputs">
         <label className="field">
-          <span>Spread {fav ? `(${fav === 'home' ? home : away} by)` : ''}</span>
+          <span>Spread {fav && fav !== 'pk' ? `(${fav === 'home' ? home : away} by)` : ''}</span>
           <input
             inputMode="decimal"
-            placeholder="3.5"
-            value={pts}
+            placeholder={fav === 'pk' ? 'PK' : '3.5'}
+            disabled={fav === 'pk'}
+            value={fav === 'pk' ? '' : pts}
             onChange={(e) => (setPts(e.target.value), clear())}
           />
         </label>
