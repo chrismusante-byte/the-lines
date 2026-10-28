@@ -922,3 +922,6 @@ p {
   background: var(--bg2);
   color: var(--muted);
 }
+.leg-line.dot {
+  border-top-style: dotted;
+}

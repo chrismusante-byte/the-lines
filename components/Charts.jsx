@@ -4,7 +4,9 @@ import { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 import { TIERS, avgOff, sumBuckets, weeklyWinners } from '../lib/charts';
 
-const PLAYER_COLORS = ['#3d8fe8', '#f07a3c'];
+const PLAYER_COLORS = ['#3d8fe8', '#f07a3c', '#2ec4b6'];
+const DASHES = [[], [6, 4], [2, 3]];
+const POINTS = ['circle', 'rectRot', 'triangle'];
 const GRID = '#26322d';
 const TICK = '#93a39b';
 const SURFACE = '#18211d';
@@ -92,12 +94,12 @@ function LineChart({ labels, series, reverse, signed }) {
           datasets: series.map((s, i) => ({
             label: s.name,
             data: s.data,
-            borderColor: PLAYER_COLORS[i % 2],
-            backgroundColor: PLAYER_COLORS[i % 2],
+            borderColor: PLAYER_COLORS[i % 3],
+            backgroundColor: PLAYER_COLORS[i % 3],
             borderWidth: 2,
-            borderDash: i === 1 ? [6, 4] : [],
+            borderDash: DASHES[i % 3],
             pointRadius: 4,
-            pointStyle: i === 1 ? 'rectRot' : 'circle',
+            pointStyle: POINTS[i % 3],
             tension: 0.25,
             spanGaps: true,
           })),
@@ -142,7 +144,7 @@ function Legend({ players }) {
     <div className="chart-legend">
       {players.map((p, i) => (
         <span key={p.id}>
-          <span className={`leg-line ${i === 1 ? 'dash' : ''}`} style={{ borderColor: PLAYER_COLORS[i % 2] }} />
+          <span className={`leg-line ${i === 1 ? 'dash' : i === 2 ? 'dot' : ''}`} style={{ borderColor: PLAYER_COLORS[i % 3] }} />
           {p.name}
         </span>
       ))}
@@ -153,7 +155,7 @@ function Legend({ players }) {
 function Strip({ title, items, field, players }) {
   const color = (name) => {
     const i = players.findIndex((p) => p.name === name);
-    return i >= 0 ? PLAYER_COLORS[i % 2] : null;
+    return i >= 0 ? PLAYER_COLORS[i % 3] : null;
   };
   const counts = {};
   for (const it of items) counts[it[field]] = (counts[it[field]] || 0) + 1;
@@ -200,12 +202,18 @@ export default function Charts({ weekly, scope, week }) {
       name: p.name,
       data: weeks.map((w) => {
         const b = byWeek[w][p.id];
+        if (!b) return null;
         run += b.w - b.l;
         return run;
       }),
     };
   });
-  const anyGraded = weeks.some((w) => players.some((p) => byWeek[w][p.id].w + byWeek[w][p.id].l + byWeek[w][p.id].p > 0));
+  const anyGraded = weeks.some((w) =>
+    players.some((p) => {
+      const b = byWeek[w][p.id];
+      return b && b.w + b.l + b.p > 0;
+    })
+  );
   const labels = weeks.map((w) => `W${w}`);
 
   return (
@@ -227,7 +235,7 @@ export default function Charts({ weekly, scope, week }) {
             ))}
           </div>
           <div className="donuts">
-            {players.map((p) => {
+            {players.filter((p) => scopeWeeks.some((w) => byWeek[w][p.id])).map((p) => {
               const b = sumBuckets(scopeWeeks.map((w) => byWeek[w][p.id]));
               const v = avgOff(b);
               return (
