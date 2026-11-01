@@ -2,11 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
-import { TIERS, avgOff, sumBuckets, weeklyWinners } from '../lib/charts';
+import { TIERS, avgOff, sumBuckets, weeklyWinners, humansVsBots } from '../lib/charts';
+import { label } from '../lib/players';
 
-const PLAYER_COLORS = ['#3d8fe8', '#f07a3c', '#2ec4b6'];
-const DASHES = [[], [6, 4], [2, 3]];
-const POINTS = ['circle', 'rectRot', 'triangle'];
+const PLAYER_COLORS = ['#3d8fe8', '#f07a3c', '#2ec4b6', '#e8c13d', '#c58cf2'];
+const DASHES = [[], [6, 4], [2, 3], [10, 3, 2, 3], [1, 4]];
+const LEG_STYLE = ['solid', 'dashed', 'dotted', 'dashed', 'dotted'];
+const POINTS = ['circle', 'rectRot', 'triangle', 'rect', 'star'];
+const N = PLAYER_COLORS.length;
 const GRID = '#26322d';
 const TICK = '#93a39b';
 const SURFACE = '#18211d';
@@ -94,12 +97,12 @@ function LineChart({ labels, series, reverse, signed }) {
           datasets: series.map((s, i) => ({
             label: s.name,
             data: s.data,
-            borderColor: PLAYER_COLORS[i % 3],
-            backgroundColor: PLAYER_COLORS[i % 3],
+            borderColor: PLAYER_COLORS[i % N],
+            backgroundColor: PLAYER_COLORS[i % N],
             borderWidth: 2,
-            borderDash: DASHES[i % 3],
+            borderDash: DASHES[i % N],
             pointRadius: 4,
-            pointStyle: POINTS[i % 3],
+            pointStyle: POINTS[i % N],
             tension: 0.25,
             spanGaps: true,
           })),
@@ -144,22 +147,71 @@ function Legend({ players }) {
     <div className="chart-legend">
       {players.map((p, i) => (
         <span key={p.id}>
-          <span className={`leg-line ${i === 1 ? 'dash' : i === 2 ? 'dot' : ''}`} style={{ borderColor: PLAYER_COLORS[i % 3] }} />
-          {p.name}
+          <span className="leg-line" style={{ borderColor: PLAYER_COLORS[i % N], borderTopStyle: LEG_STYLE[i % N] }} />
+          {label(p)}
         </span>
       ))}
     </div>
   );
 }
 
+function shortName(name, players) {
+  const p = players.find((x) => x.name === name);
+  if (!p || !p.is_bot) return name;
+  return `🤖 ${name.replace(/^AI /, '')}`;
+}
+
+function HumansVsBots({ weekly }) {
+  const hvb = humansVsBots(weekly);
+  if (!hvb) return null;
+  const tally = (field) => {
+    const c = { Humans: 0, Bots: 0, Tie: 0 };
+    for (const w of hvb) if (c[w[field]] !== undefined) c[w[field]]++;
+    return c;
+  };
+  const row = (title, field) => {
+    const c = tally(field);
+    return (
+      <div className="strip-block">
+        <div className="small muted">
+          {title} · Humans {c.Humans} · Bots {c.Bots} · Tie {c.Tie}
+        </div>
+        <div className="strip">
+          {hvb.map((w) => (
+            <div
+              key={w.week}
+              className="strip-cell"
+              style={w[field] === 'Humans' ? { background: '#3d8fe8', color: '#fff' } : w[field] === 'Bots' ? { background: '#7a6a9e', color: '#fff' } : undefined}
+            >
+              W{w.week}
+              <br />
+              <strong>{w[field] === 'Bots' ? '🤖' : w[field] === 'Humans' ? '🧑' : w[field]}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <section className="card stat-card">
+      <div className="stat-head">
+        <h3>Humans vs. Bots</h3>
+        <div className="muted small">Best human vs best bot each week</div>
+      </div>
+      {row('Closest to Vegas', 'vegas')}
+      {row('Best pick record', 'picks')}
+    </section>
+  );
+}
+
 function Strip({ title, items, field, players }) {
   const color = (name) => {
     const i = players.findIndex((p) => p.name === name);
-    return i >= 0 ? PLAYER_COLORS[i % 3] : null;
+    return i >= 0 ? PLAYER_COLORS[i % N] : null;
   };
   const counts = {};
   for (const it of items) counts[it[field]] = (counts[it[field]] || 0) + 1;
-  const summary = [...players.map((p) => `${p.name} ${counts[p.name] || 0}`), `Tie ${counts.Tie || 0}`].join(' · ');
+  const summary = [...players.map((p) => `${label(p)} ${counts[p.name] || 0}`), `Tie ${counts.Tie || 0}`].join(' · ');
   return (
     <div className="strip-block">
       <div className="small muted">
@@ -172,7 +224,7 @@ function Strip({ title, items, field, players }) {
             <div key={it.week} className="strip-cell" style={c ? { background: c, color: '#fff' } : undefined}>
               W{it.week}
               <br />
-              <strong>{it[field]}</strong>
+              <strong>{shortName(it[field], players)}</strong>
             </div>
           );
         })}
@@ -241,7 +293,7 @@ export default function Charts({ weekly, scope, week }) {
               return (
                 <div key={p.id} className="donut-col">
                   <Donut bucket={b} />
-                  <div className="donut-name">{p.name}</div>
+                  <div className="donut-name">{label(p)}</div>
                   <div className="muted small">
                     {b.guessed}/{b.games} games · avg {v === null ? '—' : v.toFixed(2)} off
                   </div>
@@ -259,6 +311,8 @@ export default function Charts({ weekly, scope, week }) {
         <Strip title="A · Closest to Vegas" items={winners} field="vegas" players={players} />
         <Strip title="B · Best pick record" items={winners} field="picks" players={players} />
       </section>
+
+      <HumansVsBots weekly={weekly} />
 
       <section className="card stat-card">
         <div className="stat-head">

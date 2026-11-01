@@ -5,6 +5,7 @@ import { getBrowserClient } from '../lib/supabase';
 import { team, isDivisional, isConference } from '../lib/teams';
 import { fmtNum, fmtSpread, fmtSigned, atsLean, ouLean, gameResult } from '../lib/nfl';
 import Scouting from './Scouting';
+import { label } from '../lib/players';
 
 function kickoff(iso) {
   const d = new Date(iso);
@@ -180,7 +181,7 @@ function RevealedView({ game }) {
           if (!g.locked) {
             return (
               <div className="who-row" key={g.player_id}>
-                <div className="who-name">{g.is_me ? 'You' : g.name}</div>
+                <div className="who-name">{g.is_me ? 'You' : label(g)}</div>
                 <div className="muted">{g.revealed || game.started ? 'No guess' : 'Hasn’t locked yet'}</div>
               </div>
             );
@@ -188,7 +189,7 @@ function RevealedView({ game }) {
           if (g.home_spread == null) {
             return (
               <div className="who-row" key={g.player_id}>
-                <div className="who-name">{g.is_me ? 'You' : g.name}</div>
+                <div className="who-name">{g.is_me ? 'You' : label(g)}</div>
                 <div className="muted">Locked ✓</div>
               </div>
             );
@@ -211,7 +212,7 @@ function RevealedView({ game }) {
           }
           return (
             <div className="who-row" key={g.player_id}>
-              <div className="who-name">{g.is_me ? 'You' : g.name}</div>
+              <div className="who-name">{g.is_me ? 'You' : label(g)}</div>
               <div className="who-cols">
                 <div>
                   <div className={`who-num ${closeness(sOff) ? `c-${closeness(sOff).key}` : ''}`}>
@@ -238,6 +239,7 @@ function RevealedView({ game }) {
                   {totalErr !== null && <div className="who-sub">{fmtNum(totalErr)} off final total</div>}
                 </div>
               </div>
+              {g.reason && <div className="who-sub bot-reason">“{g.reason}”</div>}
             </div>
           );
         })}
@@ -299,7 +301,7 @@ export default function GameCard({ game, onChanged, compact, ctx }) {
           <div className="others">
             {others.map((o) => (
               <span key={o.player_id} className={`pill ${o.locked ? 'yes' : ''}`}>
-                {o.name}: {o.locked ? 'locked ✓' : 'thinking…'}
+                {label(o)}: {o.locked ? 'locked ✓' : o.is_bot ? 'locks Wed' : 'thinking…'}
               </span>
             ))}
           </div>

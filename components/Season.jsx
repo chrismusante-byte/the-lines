@@ -7,6 +7,7 @@ import { team } from '../lib/teams';
 import { aggregate, rankBy, pct, groupByGame } from '../lib/stats';
 import { buildWeekly } from '../lib/charts';
 import Charts from './Charts';
+import { label } from '../lib/players';
 
 const f1 = (v) => (v === null || v === undefined ? '—' : v.toFixed(1));
 const pctStr = (v) => (v === null ? '—' : `${Math.round(v * 100)}%`);
@@ -65,7 +66,7 @@ function GameLog({ rows }) {
           </div>
           {g.players.map((p) => (
             <div key={p.player_id} className="log-row">
-              <span className="log-name">{p.name}</span>
+              <span className="log-name">{label(p)}</span>
               <span>
                 {fmtSpread(p.g, g.home_team, g.away_team)} <Chip g={p.atsLock} />
               </span>
@@ -148,7 +149,7 @@ export default function Season({ week }) {
             render={(p) => (
               <>
                 <div className="rank-line">
-                  <span className="rank-name">{p.name}</span>
+                  <span className="rank-name">{label(p)}</span>
                   <span className="rank-big">{f1(p.vegasAvg)}</span>
                 </div>
                 <div className="muted small">
@@ -165,7 +166,7 @@ export default function Season({ week }) {
             render={(p) => (
               <>
                 <div className="rank-line">
-                  <span className="rank-name">{p.name}</span>
+                  <span className="rank-name">{label(p)}</span>
                   <span className="rank-big">{pctStr(pct(p.picksLock))}</span>
                 </div>
                 <div className="pick-grid">
@@ -190,7 +191,7 @@ export default function Season({ week }) {
             render={(p) => (
               <>
                 <div className="rank-line">
-                  <span className="rank-name">{p.name}</span>
+                  <span className="rank-name">{label(p)}</span>
                   <span className="rank-big">{f1(p.finalAvg)}</span>
                 </div>
                 <div className="muted small">
@@ -210,7 +211,7 @@ export default function Season({ week }) {
             ) : (
               moveRank.map((p) => (
                 <div key={p.player_id} className="move-row">
-                  <div className="rank-name">{p.name}</div>
+                  <div className="rank-name">{label(p)}</div>
                   <div className="small">
                     Spread moved in {p.move.nS} of {p.move.tracked} games
                     {p.move.nS ? `, avg ${f1(p.move.absS / p.move.nS)} pts — toward your number ${p.move.towardS}, away ${p.move.awayS}` : ''}
