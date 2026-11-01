@@ -43,6 +43,11 @@ function Chip({ g }) {
   return <span className={`wl ${g.res}`}>{g.res}</span>;
 }
 
+function BV({ r }) {
+  if (!r) return null;
+  return <span className={`wl ${r === 'T' ? 'P' : r}`}>{r}</span>;
+}
+
 function GameLog({ rows }) {
   const games = groupByGame(rows);
   return (
@@ -80,6 +85,12 @@ function GameLog({ rows }) {
               <span>
                 {fmtNum(p.gt)} <Chip g={p.ouLock} />
               </span>
+              {p.bvSpread && (
+                <span className="small muted">
+                  vs Vegas <BV r={p.bvSpread} />
+                  <BV r={p.bvTotal} />
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -121,6 +132,7 @@ export default function Season({ week }) {
 
   const vegasRank = rankBy(players.filter((p) => p.vegasAvg !== null), 'vegasAvg', 'asc');
   const joeRank = rankBy(players.filter((p) => p.joeAvg !== null), 'joeAvg', 'asc');
+  const bvRank = rankBy(players.filter((p) => p.bv.w + p.bv.l + p.bv.t > 0), (p) => p.bvNet, 'desc');
   const picksRank = rankBy(
     players.filter((p) => pct(p.picksLock) !== null || pct(p.picksClose) !== null),
     (p) => pct(p.picksLock) ?? pct(p.picksClose),
@@ -153,6 +165,26 @@ export default function Season({ week }) {
       ) : (
         <>
           <Board
+            title="Beat Vegas"
+            sub="Each final: was your number or the pregame Vegas line closer to what actually happened? Spread and total each count."
+            items={bvRank}
+            render={(p) => (
+              <>
+                <div className="rank-line">
+                  <span className="rank-name">{label(p)}</span>
+                  <span className="rank-big">
+                    {p.bv.w}-{p.bv.l}
+                    {p.bv.t ? `-${p.bv.t}` : ''}
+                  </span>
+                </div>
+                <div className="muted small">
+                  Avg off actual: you {f1(p.bvMe)} · Vegas {f1(p.bvVegas)} on the same games
+                </div>
+              </>
+            )}
+          />
+
+          <Board
             title="Closest to Vegas"
             sub="Average points off the line when you locked (lower is better)"
             items={vegasRank}
@@ -164,6 +196,9 @@ export default function Season({ week }) {
                 </div>
                 <div className="muted small">
                   Spread {f1(p.vegasAvgS)} · Total {f1(p.vegasAvgT)} · Nailed {p.vegas.nailedS + p.vegas.nailedT} · {p.games} games
+                </div>
+                <div className="muted small">
+                  vs pregame (closing) line: {f1(p.closeAvg)} off
                 </div>
               </>
             )}

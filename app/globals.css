@@ -716,7 +716,7 @@ p {
 }
 .log-row {
   display: grid;
-  grid-template-columns: 70px 1fr 1fr;
+  grid-template-columns: 70px 1fr 1fr auto;
   gap: 8px;
   font-size: 14px;
   align-items: center;
@@ -945,4 +945,17 @@ p {
 }
 .joe-list {
   margin-top: 10px;
+}
+
+.bv-tag {
+  font-weight: 700;
+}
+.bv-tag.W {
+  color: #4fd18b;
+}
+.bv-tag.L {
+  color: #ff5e57;
+}
+.bv-tag.T {
+  color: #93a39b;
 }
