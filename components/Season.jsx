@@ -65,6 +65,12 @@ function GameLog({ rows }) {
             Lock→close: {fmtSpread(g.players[0].lock, g.home_team, g.away_team)} → {fmtSpread(g.close, g.home_team, g.away_team)} · O/U{' '}
             {fmtNum(g.players[0].lockT)} → {fmtNum(g.closeT)}
           </div>
+          {g.players[0].dkS !== null && (
+            <div className="muted small">
+              Joe (DK){g.players[0].dk_estimated ? ' est.' : ''}: {fmtSpread(g.players[0].dkS, g.home_team, g.away_team)} · O/U{' '}
+              {fmtNum(g.players[0].dkT)}
+            </div>
+          )}
           {g.players.map((p) => (
             <div key={p.player_id} className="log-row">
               <span className="log-name">{label(p)}</span>
@@ -114,6 +120,7 @@ export default function Season({ week }) {
   if (!rows) return <div className="empty">Loading stats…</div>;
 
   const vegasRank = rankBy(players.filter((p) => p.vegasAvg !== null), 'vegasAvg', 'asc');
+  const joeRank = rankBy(players.filter((p) => p.joeAvg !== null), 'joeAvg', 'asc');
   const picksRank = rankBy(
     players.filter((p) => pct(p.picksLock) !== null || pct(p.picksClose) !== null),
     (p) => pct(p.picksLock) ?? pct(p.picksClose),
@@ -157,6 +164,24 @@ export default function Season({ week }) {
                 </div>
                 <div className="muted small">
                   Spread {f1(p.vegasAvgS)} · Total {f1(p.vegasAvgT)} · Nailed {p.vegas.nailedS + p.vegas.nailedT} · {p.games} games
+                </div>
+              </>
+            )}
+          />
+
+          <Board
+            title="Closest to Joe (DK)"
+            sub="Avg points off DraftKings' line at your lock. DK is a stand-in for Joe Fortenbaugh (lower is better)"
+            items={joeRank}
+            render={(p) => (
+              <>
+                <div className="rank-line">
+                  <span className="rank-name">{label(p)}</span>
+                  <span className="rank-big">{f1(p.joeAvg)}</span>
+                </div>
+                <div className="muted small">
+                  Spread {f1(p.joeAvgS)} · Total {f1(p.joeAvgT)} · Nailed {p.joe.nailed}
+                  {p.joe.est ? ` · ${p.joe.est} games est. (Week 8 used DK's close)` : ''}
                 </div>
               </>
             )}
