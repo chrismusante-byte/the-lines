@@ -234,7 +234,7 @@ function Strip({ title, items, field, players }) {
 }
 
 export default function Charts({ weekly, scope, week }) {
-  const { players, weeks, byWeek } = weekly;
+  const { players, weeks, byWeek, actual } = weekly;
   if (!players.length || !weeks.length) return null;
 
   const scopeWeeks = scope === 'week' ? weeks.filter((w) => w === week) : weeks;
@@ -301,6 +301,52 @@ export default function Charts({ weekly, scope, week }) {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {scopeWeeks.length > 0 && (
+        <section className="card stat-card">
+          <div className="stat-head">
+            <h3>How close to actual</h3>
+            <div className="muted small">
+              {scope === 'week' ? `Week ${week}` : 'Season to date'} · spread vs the final margin, total vs the final
+              score · finished games only · Vegas = pregame line
+            </div>
+          </div>
+          <div className="tier-legend">
+            {TIERS.map((t) => (
+              <span key={t.key}>
+                <span className="sq" style={{ background: t.color }} />
+                {t.label}
+              </span>
+            ))}
+          </div>
+          {(() => {
+            const vb = sumBuckets(scopeWeeks.map((w) => actual?.[w]?.vegas));
+            if (!vb.games) return <div className="muted small">Fills in once games go final.</div>;
+            const cols = [
+              ...players
+                .filter((p) => scopeWeeks.some((w) => actual?.[w]?.[p.id]))
+                .map((p) => ({ key: p.id, name: label(p), b: sumBuckets(scopeWeeks.map((w) => actual?.[w]?.[p.id])) })),
+              { key: 'vegas', name: '🎰 Vegas', b: vb },
+            ];
+            return (
+              <div className="donuts">
+                {cols.map((c) => {
+                  const v = avgOff(c.b);
+                  return (
+                    <div key={c.key} className="donut-col">
+                      <Donut bucket={c.b} />
+                      <div className="donut-name">{c.name}</div>
+                      <div className="muted small">
+                        {c.key === 'vegas' ? c.b.games : c.b.guessed}/{c.b.games} finals · avg {v === null ? '—' : v.toFixed(1)} off
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </section>
       )}
 
