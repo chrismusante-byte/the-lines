@@ -27,13 +27,14 @@ function sideAbbr(side, game) {
   return null;
 }
 
-// One color scale for spread and total: how far your number was from Vegas.
+// One color scale everywhere (same as the donut charts), football scoring as the ruler:
+// nailed 0-1, sharp <=3 (within a FG), off <=7 (within a TD), way off 7.5+.
 function closeness(off) {
   if (off === null || off === undefined) return null;
   const o = Math.abs(off);
-  if (o === 0) return { key: 'nailed', label: 'Nailed it' };
-  if (o <= 1) return { key: 'sharp', label: 'Sharp' };
-  if (o <= 2.5) return { key: 'off', label: 'Off' };
+  if (o <= 1) return { key: 'nailed', label: o === 0 ? 'Nailed it' : 'Nailed' };
+  if (o <= 3) return { key: 'sharp', label: 'Sharp' };
+  if (o <= 7) return { key: 'off', label: 'Off' };
   return { key: 'way', label: 'Way off' };
 }
 
@@ -43,7 +44,7 @@ function CloseTag({ off, suffix }) {
   return (
     <span className={`close-tag c-${c.key}`}>
       {c.label}
-      {c.key !== 'nailed' ? ` · ${suffix}` : ''}
+      {Math.abs(off) !== 0 ? ` · ${suffix}` : ''}
     </span>
   );
 }
