@@ -931,3 +931,18 @@ p {
   font-style: italic;
   opacity: 0.85;
 }
+
+.joe-players {
+  margin-top: 10px;
+  display: grid;
+  gap: 4px;
+}
+.joe-prow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+.joe-list {
+  margin-top: 10px;
+}

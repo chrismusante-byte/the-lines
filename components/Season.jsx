@@ -7,6 +7,7 @@ import { team } from '../lib/teams';
 import { aggregate, rankBy, pct, groupByGame } from '../lib/stats';
 import { buildWeekly } from '../lib/charts';
 import Charts from './Charts';
+import VsJoe from './VsJoe';
 import { label } from '../lib/players';
 
 const f1 = (v) => (v === null || v === undefined ? '—' : v.toFixed(1));
@@ -133,6 +134,8 @@ export default function Season({ week }) {
       </div>
 
       <Charts weekly={weekly} scope={scope} week={week} />
+
+      <VsJoe rows={rows} scope={scope} week={week} />
 
       {filtered.length === 0 ? (
         <div className="empty">
