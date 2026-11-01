@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../../../lib/supabase';
 import { refreshLines, refreshScores } from '../../../lib/odds';
 import { refreshContext } from '../../../lib/context';
+import { runBotsJob } from '../../../lib/botjob';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // Called by the Supabase scheduler (pg_cron) before kickoffs and after games.
 // Body: { "kinds": ["lines", "scores"] }   Header: Authorization: Bearer <CRON_SECRET>
@@ -56,6 +57,23 @@ export async function POST(req) {
       console.log('[cron] context:', out.context);
       await ops.record('context', !String(out.context).includes('error'), out.context);
     } else out.context = 'skipped';
+  }
+  // AI bot players. 'bots_dry' runs the model but saves nothing (for testing).
+  if (kinds.includes('bots') || kinds.includes('bots_dry')) {
+    const dry = kinds.includes('bots_dry');
+    const due = dry ? true : (await ops.claim('bots', 50)).data;
+    if (due) {
+      try {
+        out.bots = await runBotsJob(sb, secret, (process.env.ANTHROPIC_API_KEY || '').trim(), { dry });
+      } catch (e) {
+        out.bots = `error bots: ${e.message}`;
+      }
+      console.log('[cron] bots:', typeof out.bots === 'string' ? out.bots : out.bots.status);
+      if (!dry) {
+        const msg = typeof out.bots === 'string' ? out.bots : out.bots.status;
+        await ops.record('bots', !msg.startsWith('error'), msg);
+      }
+    } else out.bots = 'skipped';
   }
   return Response.json(out);
 }

@@ -925,3 +925,9 @@ p {
 .leg-line.dot {
   border-top-style: dotted;
 }
+
+.bot-reason {
+  margin-top: 6px;
+  font-style: italic;
+  opacity: 0.85;
+}
