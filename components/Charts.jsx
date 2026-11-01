@@ -260,6 +260,22 @@ export default function Charts({ weekly, scope, week }) {
       }),
     };
   });
+  const bvRace = players.map((p) => {
+    let run = 0;
+    return {
+      name: p.name,
+      data: weeks.map((w) => {
+        const b = actual?.[w]?.[p.id];
+        if (!b) return null;
+        run += b.bvW - b.bvL;
+        return run;
+      }),
+    };
+  });
+  const anyBv = weeks.some((w) => players.some((p) => {
+    const b = actual?.[w]?.[p.id];
+    return b && b.bvW + b.bvL + b.bvT > 0;
+  }));
   const anyGraded = weeks.some((w) =>
     players.some((p) => {
       const b = byWeek[w][p.id];
@@ -356,6 +372,7 @@ export default function Charts({ weekly, scope, week }) {
         </div>
         <Strip title="A · Closest to Vegas" items={winners} field="vegas" players={players} />
         <Strip title="B · Best pick record" items={winners} field="picks" players={players} />
+        <Strip title="C · Beat Vegas (closer to the result than the pregame line)" items={winners} field="beat" players={players} />
       </section>
 
       <HumansVsBots weekly={weekly} />
@@ -378,6 +395,23 @@ export default function Charts({ weekly, scope, week }) {
           <>
             <Legend players={players} />
             <LineChart labels={labels} series={race} signed />
+          </>
+        ) : (
+          <div className="muted small">Fills in once games go final.</div>
+        )}
+      </section>
+
+      <section className="card stat-card">
+        <div className="stat-head">
+          <h3>Beat Vegas race</h3>
+          <div className="muted small">
+            Running wins minus losses vs the pregame line (closer to the actual result) · above 0 = out-predicting Vegas · missed finals count as 2 losses
+          </div>
+        </div>
+        {anyBv ? (
+          <>
+            <Legend players={players} />
+            <LineChart labels={labels} series={bvRace} signed />
           </>
         ) : (
           <div className="muted small">Fills in once games go final.</div>
