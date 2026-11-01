@@ -48,6 +48,17 @@ function CloseTag({ off, suffix }) {
   );
 }
 
+// Who was closer to the final: this number or the pregame Vegas line?
+function BeatTag({ me, vegas }) {
+  const r = me < vegas ? 'W' : me > vegas ? 'L' : 'T';
+  const text = r === 'W' ? 'beat Vegas' : r === 'L' ? 'Vegas closer' : 'tied Vegas';
+  return (
+    <div className={`bv-tag ${r}`}>
+      {text} (Vegas {fmtNum(vegas)} off)
+    </div>
+  );
+}
+
 function GuessForm({ game, mine, onSaved }) {
   const sb = getBrowserClient();
   const initFav =
@@ -204,11 +215,16 @@ function RevealedView({ game }) {
           let ouRes = null;
           let spreadErr = null;
           let totalErr = null;
+          let vSpreadErr = null;
+          let vTotalErr = null;
           if (res?.final) {
             if (res.coverSide && ats && ats !== 'none') atsRes = res.coverSide === 'push' ? 'P' : res.coverSide === ats ? 'W' : 'L';
             if (res.ouSide && ou && ou !== 'none') ouRes = res.ouSide === 'push' ? 'P' : res.ouSide === ou ? 'W' : 'L';
             spreadErr = Math.abs(-Number(g.home_spread) - res.margin);
             totalErr = Math.abs(Number(g.total) - res.actualTotal);
+            // Pregame Vegas line (after kickoff this is the closing line)
+            if (v?.home_spread != null) vSpreadErr = Math.abs(-Number(v.home_spread) - res.margin);
+            if (v?.total != null) vTotalErr = Math.abs(Number(v.total) - res.actualTotal);
           }
           return (
             <div className="who-row" key={g.player_id}>
@@ -225,7 +241,12 @@ function RevealedView({ game }) {
                     {ats === 'none' ? 'No ATS lean' : ats ? `Likes ${sideAbbr(ats, game)} ATS` : ''}
                     {atsRes && <span className={`wl ${atsRes}`}>{atsRes}</span>}
                   </div>
-                  {spreadErr !== null && <div className="who-sub">{fmtNum(spreadErr)} off final margin</div>}
+                  {spreadErr !== null && (
+                    <div className="who-sub">
+                      {fmtNum(spreadErr)} off final margin
+                      {vSpreadErr !== null && <BeatTag me={spreadErr} vegas={vSpreadErr} />}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className={`who-num ${closeness(tOff) ? `c-${closeness(tOff).key}` : ''}`}>{fmtNum(g.total)}</div>
@@ -236,7 +257,12 @@ function RevealedView({ game }) {
                     {ou === 'none' ? 'No O/U lean' : ou ? (ou === 'over' ? 'Likes Over' : 'Likes Under') : ''}
                     {ouRes && <span className={`wl ${ouRes}`}>{ouRes}</span>}
                   </div>
-                  {totalErr !== null && <div className="who-sub">{fmtNum(totalErr)} off final total</div>}
+                  {totalErr !== null && (
+                    <div className="who-sub">
+                      {fmtNum(totalErr)} off final total
+                      {vTotalErr !== null && <BeatTag me={totalErr} vegas={vTotalErr} />}
+                    </div>
+                  )}
                 </div>
               </div>
               {g.reason && <div className="who-sub bot-reason">“{g.reason}”</div>}
